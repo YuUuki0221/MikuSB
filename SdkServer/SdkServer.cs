@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MikuSB.Proxy;
 using MikuSB.SdkServer.Handlers;
 using MikuSB.SdkServer.Utils;
 using MikuSB.Util;
@@ -91,5 +92,6 @@ public class Startup
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
             });
         services.AddSingleton<Logger>(_ => new Logger("HttpServer"));
+        services.AddMikuSbProxy(ConfigManager.Config.Proxy);
     }
 }

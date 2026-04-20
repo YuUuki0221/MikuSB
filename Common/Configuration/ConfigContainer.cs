@@ -6,6 +6,7 @@ public class ConfigContainer
     public GameServerConfig GameServer { get; set; } = new();
     public PathConfig Path { get; set; } = new();
     public ServerOption ServerOption { get; set; } = new();
+    public ProxyOptions Proxy { get; set; } = new();
 }
 
 public class HttpServerConfig
@@ -73,4 +74,15 @@ public class ServerProfile
 {
     public string Name { get; set; } = "Miku-chan";
     public int Uid { get; set; } = 80;
+}
+
+public class ProxyOptions
+{
+    public bool Enabled { get; set; } = true;
+    public int Port { get; set; } = 8888;
+    public int ServerHttpPort { get; set; } = 8080;
+    public bool InstallRootCertificate { get; set; } = true;
+    public bool ManageSystemProxy { get; set; } = true;
+    public bool RestoreSystemProxyOnStop { get; set; } = true;
+    public string ProxyOverride { get; set; } = "localhost;127.*;10.*;192.168.*;<local>";
 }
