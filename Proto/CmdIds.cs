@@ -9,8 +9,8 @@ public class CmdIds
     public const int RspReconnect = 4;
     public const int ReqRename = 5;
     public const int RspRename = 6;
-    public const int ReqCallGs = 7;
-    public const int RspCallGs = 8;
+    public const int ReqCallGS = 7;
+    public const int RspCallGS = 8;
     public const int ReqUseItem = 9;
     public const int RspUseItem = 10;
     public const int ReqReadMail = 11;

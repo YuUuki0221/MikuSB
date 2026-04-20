@@ -14,13 +14,7 @@ public class PacketRspLogin : BasePacket
             Timestamp = (uint)Extensions.GetUnixSec(),
             WorldChannel = 1,
             AreaId = 1,
-            Data = new Player
-            {
-                Pid = (ulong)player.Data.Uid,
-                Account = player.Data.Name,
-                Name = player.Data.Name,
-                Level = 80
-            },
+            Data = player.Data.ToProto(),
             NeedRename = false
         };
 
