@@ -9,7 +9,7 @@ public class PlayerGameData : BaseDatabaseDataHelper
 {
     public string? Name { get; set; } = "";
     public string? Signature { get; set; } = "MikuPS";
-    public uint Level { get; set; } = 1;
+    public uint Level { get; set; } = 100;
     public int Exp { get; set; } = 0;
     public long RegisterTime { get; set; } = Extensions.GetUnixSec();
     public long LastActiveTime { get; set; }
