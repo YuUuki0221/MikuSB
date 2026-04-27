@@ -21,7 +21,7 @@
   <Target Name="BuildBundledUpdater" BeforeTargets="Build">
     <MSBuild
       Projects="..\MikuSB.Updater\MikuSB.Updater.csproj"
-      Targets="Build"
+      Targets="Restore;Build"
       Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
 
