@@ -62,7 +62,7 @@ public class PacketNtfCallScript : BasePacket
         };
 
         var extraSync = new NtfSyncPlayer();
-        foreach (var item in inventory.Items.Values) if ((item.TemplateId & 0xFFFF) != 5) extraSync.Items.Add(item.ToProto());
+        foreach (var item in inventory.Items.Values) extraSync.Items.Add(item.ToProto());
         foreach (var weapon in inventory.Weapons.Values) extraSync.Items.Add(weapon.ToProto());
         proto.ExtraSync = extraSync;
         SetData(proto);
