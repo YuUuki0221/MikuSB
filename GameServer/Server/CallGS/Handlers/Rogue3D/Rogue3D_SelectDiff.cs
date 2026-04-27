@@ -1,9 +1,9 @@
+using MikuSB.Data;
 using MikuSB.Database.Player;
 using MikuSB.GameServer.Game.Player;
 using MikuSB.Proto;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
 
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
 
@@ -18,16 +18,6 @@ public class Rogue3D_SelectDiff : ICallGSHandler
     private const uint CurDiffSid = 5;
     private const uint GameplayIdSid = 6;
 
-    // First gameplay group per difficulty (from server_01_difficult.txt, GameplayGroup column)
-    private static readonly Dictionary<uint, uint> DiffToGameplayGroup = new()
-    {
-        { 1,   100 },
-        { 2,   200 },
-        { 3,   300 },
-        { 4,   400 },
-        { 100, 811 },
-    };
-
     public async Task Handle(Connection connection, string param, ushort seqNo)
     {
         var req = JsonSerializer.Deserialize<SelectDiffParam>(param);
@@ -37,7 +27,7 @@ public class Rogue3D_SelectDiff : ICallGSHandler
             return;
         }
 
-        if (!DiffToGameplayGroup.TryGetValue(req.DiffId, out var gameplayGroup))
+        if (!GameData.Rogue3DDifficultData.TryGetValue(req.DiffId, out var cfg) || cfg.GameplayGroup.Count == 0)
         {
             await CallGSRouter.SendScript(connection, "Rogue3D_SelectDiff", "{\"sErr\":\"rogue3.massage_gameProcessError\"}");
             return;
@@ -47,7 +37,7 @@ public class Rogue3D_SelectDiff : ICallGSHandler
         var sync = new NtfSyncPlayer();
 
         SetAttr(player, CurDiffSid, req.DiffId, sync);
-        SetAttr(player, GameplayIdSid, gameplayGroup, sync);
+        SetAttr(player, GameplayIdSid, cfg.GameplayGroup[0], sync);
 
         await CallGSRouter.SendScript(connection, "Rogue3D_SelectDiff", "{}", sync);
     }
