@@ -17,6 +17,9 @@ public class InventoryData : BaseDatabaseDataHelper
 
     [SugarColumn(IsJson = true)]
     public Dictionary<uint, GameSkinInfo> Skins { get; set; } = [];  // Key: UniqueId
+
+    [SugarColumn(IsJson = true)]
+    public Dictionary<uint, uint> SkinTypesBySkinId { get; set; } = [];  // Key: nSkinId, Value: client nType
 }
 
 public class BaseGameItemInfo
@@ -67,7 +70,9 @@ public class GameWeaponInfo : GrowableItemInfo
         };
         return proto;
     }
-}public class GameSkinInfo : BaseGameItemInfo
+}
+
+public class GameSkinInfo : BaseGameItemInfo
 {
     public uint SkinType { get; set; }
     public override Item ToProto()
@@ -79,7 +84,7 @@ public class GameWeaponInfo : GrowableItemInfo
             Count = ItemCount,
             Flag = (uint)Flag,
         };
-        proto.Slots[11] = SkinType;
+        proto.Slots[11] = Math.Min(SkinType, 1);
         return proto;
     }
 }
