@@ -91,7 +91,7 @@ public class Startup
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
             });
-        services.AddSingleton<Logger>(_ => new Logger("HttpServer"));
+        services.AddSingleton<Logger>(_ => new Logger("Proxy"));
         services.AddMikuSbProxy(ConfigManager.Config.Proxy);
     }
 }
