@@ -23,7 +23,21 @@ internal static class Rogue3DStateHelper
         EnsureMinAttr(player, UnlockDiff3Sid, 1, sync);
         EnsureMinAttr(player, UnlockDiff4Sid, 1, sync);
 
+        foreach (var scienceSid in GetUnlockTalentScienceSids())
+        {
+            EnsureMinAttr(player, scienceSid, 1, sync);
+        }
+
         return sync;
+    }
+
+    private static IEnumerable<uint> GetUnlockTalentScienceSids()
+    {
+        return GameData.Rogue3DTalentData.Values
+            .Select(x => x.UnlockCondition)
+            .Where(x => x > 0)
+            .Distinct()
+            .OrderBy(x => x);
     }
 
     private static void EnsureMinAttr(PlayerInstance player, uint sid, uint value, NtfSyncPlayer sync, bool overwrite = false)
