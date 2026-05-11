@@ -370,6 +370,11 @@ public class PlayerInstance(PlayerGameData data)
             yield return (22, levelId, 1_700_000_000);
         }
 
+        foreach (var guide in GameData.GuideData.Values)
+        {
+            yield return (4, guide.ID, 999);
+        }
+
         // Main Scene 0 mean default scene
         yield return (132, 1, 0);
     }
