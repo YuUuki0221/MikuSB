@@ -35,7 +35,7 @@ public class ServerTextCHS
 /// </summary>
 public class WordTextCHS
 {
-    public string Skin => "Skin";
+    public string Skin => "皮肤";
     public string WeaponPart => "武器部件";
     public string CallItem => "召唤道具";
     public string SkinPart => "皮肤部件";
