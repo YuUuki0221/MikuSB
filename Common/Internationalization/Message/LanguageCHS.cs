@@ -131,6 +131,7 @@ public class CommandTextCHS
     public GirlTextCHS Girl { get; } = new();
     public GiveAllTextCHS GiveAll { get; } = new();
     public DebugTextCHS Debug { get; } = new();
+    public GameCommandTextCHS Game { get; } = new();
 }
 
 #endregion
@@ -270,6 +271,14 @@ public class DebugTextCHS
     public string DetailEnabled => "已启用详细调试包输出。";
     public string FileEnabled => "个人调试文件输出已启用。";
     public string FileDisabled => "个人调试文件输出已禁用。";
+}
+
+public class GameCommandTextCHS
+{
+    public string Desc => "使用补丁注入启动已配置的游戏";
+    public string Usage => "用法: /game [额外游戏参数]";
+    public string Started => "游戏已启动。PID: {0}";
+    public string Failed => "游戏启动失败: {0}";
 }
 
 #endregion
