@@ -48,19 +48,7 @@ public static class CertHelper
 
     private static X509Certificate2 CreateSelfSigned(string host)
     {
-        // CNG key must have AllowPlainTextExport so the private key is included in PFX export.
-        // Without this, Export(Pfx) produces a cert-only PFX, and EphemeralKeySet loads a
-        // keyless cert that Kestrel cannot use for TLS.
-        var cngParams = new CngKeyCreationParameters
-        {
-            ExportPolicy = CngExportPolicies.AllowPlaintextExport,
-            KeyUsage = CngKeyUsages.AllUsages
-        };
-        cngParams.Parameters.Add(new CngProperty("Length",
-            BitConverter.GetBytes(2048), CngPropertyOptions.None));
-
-        using var cngKey = CngKey.Create(CngAlgorithm.Rsa, null, cngParams);
-        using var rsa = new RSACng(cngKey);
+        using var rsa = RSA.Create(2048);
 
         var req = new CertificateRequest(
             new X500DistinguishedName($"CN={host}"),
@@ -84,7 +72,6 @@ public static class CertHelper
             DateTimeOffset.UtcNow.AddHours(-1),
             DateTimeOffset.UtcNow.AddYears(10));
 
-        // Private key is now exportable — PFX includes key material
         var pfx = cert.Export(X509ContentType.Pfx, Password);
         return LoadPkcs12(pfx);
     }
