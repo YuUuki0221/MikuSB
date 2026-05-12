@@ -226,6 +226,9 @@ public class PlayerInstance(PlayerGameData data)
                 continue;
             }
 
+            //ToDo
+            //Temporary fix for login issues(need to handle LoginRsp properly with zlib.)
+            //proto.Attrs[ToPackedAttrKey(gid, sid)] = val;   
             proto.Attrs[ToShiftedAttrKey(gid, sid)] = val;
         }
 
