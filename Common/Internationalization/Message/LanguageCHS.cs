@@ -128,6 +128,7 @@ public class CommandTextCHS
 {
     public NoticeTextCHS Notice { get; } = new();
     public HelpTextCHS Help { get; } = new();
+    public AccountTextCHS Account { get; } = new();
     public GirlTextCHS Girl { get; } = new();
     public GiveAllTextCHS GiveAll { get; } = new();
     public DebugTextCHS Debug { get; } = new();
@@ -216,6 +217,14 @@ public class HelpTextCHS
     public string Commands => "命令: ";
     public string CommandPermission => "所需权限: ";
     public string CommandAlias => "命令别名: ";
+}
+
+public class AccountTextCHS
+{
+    public string Desc => "管理 SDK 登录使用的账号映射";
+    public string Usage => "用法: /account create <邮箱> <UID>";
+    public string Created => "已创建账号映射: {0} -> UID {1}";
+    public string CreateFailed => "创建账号映射失败: {0}";
 }
 
 /// <summary>

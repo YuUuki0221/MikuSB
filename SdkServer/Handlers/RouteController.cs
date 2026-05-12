@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MikuSB.Configuration;
+using MikuSB.Database.Account;
 using MikuSB.SdkServer.Models;
 using MikuSB.Util;
 using System.Text;
@@ -11,6 +12,8 @@ namespace MikuSB.SdkServer.Handlers;
 public class RouteController : ControllerBase
 {
     public static ConfigContainer Config = ConfigManager.Config;
+
+    private const int DefaultAccountUid = 10001;
 
     public static object BuildServerList(string version = "")
     {
@@ -126,6 +129,51 @@ public class RouteController : ControllerBase
         return Ok(rsp);
     }
 
+    private static AccountData EnsureDefaultAccount()
+    {
+        var account = AccountData.GetAccountByUid(DefaultAccountUid)
+                      ?? AccountData.GetAccountByEmail("default@mikusb.local");
+        if (account != null)
+            return account;
+
+        return AccountData.CreateAccount("default@mikusb.local", DefaultAccountUid, "");
+    }
+
+    private static AccountData ResolveAccountByUid(string? uid)
+    {
+        if (int.TryParse(uid, out var parsedUid))
+        {
+            var accountByUid = AccountData.GetAccountByUid(parsedUid);
+            if (accountByUid != null)
+                return accountByUid;
+        }
+
+        return EnsureDefaultAccount();
+    }
+
+    private static AccountData ResolveAccountForSdkLogin(string? email, string? uid, string? token)
+    {
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            var accountByComboToken = AccountData.GetAccountByComboToken(token);
+            if (accountByComboToken != null)
+                return accountByComboToken;
+
+            var accountByDispatchToken = AccountData.GetAccountByDispatchToken(token);
+            if (accountByDispatchToken != null)
+                return accountByDispatchToken;
+        }
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var accountByEmail = AccountData.GetAccountByEmail(email);
+            if (accountByEmail != null)
+                return accountByEmail;
+        }
+
+        return ResolveAccountByUid(uid);
+    }
+
     [HttpGet("/seasun/loginByToken")]
     [HttpPost("/seasun/loginByToken")]
     public IActionResult LoginByToken(
@@ -135,9 +183,9 @@ public class RouteController : ControllerBase
         [FromForm] string? form_token
     )
     {
-        string finalUid = uid ?? form_uid ?? "10001";
-        string finalToken = token ?? form_token ?? Guid.NewGuid().ToString("N");
-        int parsedUid = int.TryParse(finalUid, out var numericUid) ? numericUid : 10001;
+        var account = ResolveAccountForSdkLogin(null, uid ?? form_uid, token ?? form_token);
+        var finalUid = account.Uid.ToString();
+        var finalToken = account.GenerateComboToken();
 
         object rsp = new
         {
@@ -148,14 +196,14 @@ public class RouteController : ControllerBase
                 isFirstLogin = false,
                 isNeedKoreaSciAuth = false,
                 ksOpenId = $"ks_{finalUid}",
-                nickname = Config.GameServer.GameServerName,
+                nickname = account.Username,
                 passportId = finalUid,
                 playerFillAgeUrl = "",
                 status = 0,
                 thirdPartyUid = "",
                 token = finalToken,
                 type = "guest",
-                uid = parsedUid
+                uid = account.Uid
             },
             msg = "操作成功"
         };
@@ -174,9 +222,10 @@ public class RouteController : ControllerBase
         [FromForm] string? form_email
     )
     {
-        string finalUid = uid ?? form_uid ?? "10001";
-        string finalToken = token ?? form_token ?? Guid.NewGuid().ToString("N");
-        int parsedUid = int.TryParse(finalUid, out var numericUid) ? numericUid : 10001;
+        var finalEmail = email ?? form_email;
+        var account = ResolveAccountForSdkLogin(finalEmail, uid ?? form_uid, token ?? form_token);
+        var finalUid = account.Uid.ToString();
+        var finalToken = account.GenerateComboToken();
 
         object rsp = new
         {
@@ -187,14 +236,14 @@ public class RouteController : ControllerBase
                 isFirstLogin = false,
                 isNeedKoreaSciAuth = false,
                 ksOpenId = $"ks_{finalUid}",
-                nickname = Config.GameServer.GameServerName,
+                nickname = account.Username,
                 passportId = finalUid,
                 playerFillAgeUrl = "",
                 status = 0,
                 thirdPartyUid = "",
                 token = finalToken,
                 type = "guest",
-                uid = parsedUid
+                uid = account.Uid
             },
             msg = "操作成功"
         };
@@ -209,7 +258,8 @@ public class RouteController : ControllerBase
         [FromForm] string? form_uid
     )
     {
-        string uidString = uid ?? form_uid ?? "10001";
+        var account = ResolveAccountByUid(uid ?? form_uid);
+        var uidString = account.Uid.ToString();
 
         object rsp = new
         {
@@ -219,7 +269,7 @@ public class RouteController : ControllerBase
                 bindAccountTypes = new[] { "google" },
                 channelUid = uidString,
                 loginAccountType = "google",
-                nickName = Config.GameServer.GameServerName,
+                nickName = account.Username,
                 passportId = uidString,
                 uid = $"seasun__{uidString}"
             },
@@ -288,7 +338,7 @@ public class RouteController : ControllerBase
     [HttpGet("/account/query-uid/{appId}")]
     public IActionResult QueryUid(string appId, [FromQuery] string authInfo)
     {
-        var uid = ExtractUid(authInfo) ?? "10001";
+        var uid = ResolveAccountByUid(ExtractUid(authInfo)).Uid.ToString();
 
         object rsp = new
         {

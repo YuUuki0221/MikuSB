@@ -87,6 +87,7 @@ public class CommandTextEN
 {
     public NoticeTextEN Notice { get; } = new();
     public HelpTextEN Help { get; } = new();
+    public AccountTextEN Account { get; } = new();
     public GirlTextEN Girl { get; } = new();
     public GiveAllTextEN GiveAll { get; } = new();
     public DebugTextEN Debug { get; } = new();
@@ -182,6 +183,14 @@ public class HelpTextEN
     public string CommandUsage => "Usage: ";
     public string CommandPermission => "Level Permission For Access: ";
     public string CommandAlias => "Command Alias：";
+}
+
+public class AccountTextEN
+{
+    public string Desc => "Manage account mappings for SDK logins";
+    public string Usage => "Usage: /account create <email> <uid>";
+    public string Created => "Created account mapping: {0} -> UID {1}";
+    public string CreateFailed => "Failed to create account mapping: {0}";
 }
 
 /// <summary>

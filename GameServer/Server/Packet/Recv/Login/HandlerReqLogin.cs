@@ -21,11 +21,13 @@ public class HandlerReqLogin : Handler
     public override async Task OnHandle(Connection connection, byte[] data, ushort seqNo)
     {
         var req = ReqLogin.Parser.ParseFrom(data);
-        var account = AccountData.GetAccountByUid(1);
+        var account = AccountData.GetAccountByComboToken(req.Token)
+                      ?? AccountData.GetAccountByDispatchToken(req.Token)
+                      ?? AccountData.GetAccountByUid(10001)
+                      ?? AccountData.GetAccountByUid(1);
         if (account == null)
         {
-            AccountData.CreateAccount("MIKU", 0, "");
-            account = AccountData.GetAccountByUid(1);
+            account = AccountData.CreateAccount("default@mikusb.local", 10001, "");
             if (account == null)
             {
                 await connection.SendPacket(CmdIds.NtfLogout);
