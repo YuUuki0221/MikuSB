@@ -86,10 +86,10 @@ public class ServerProfile
 public class ProxyOptions
 {
     public bool Enabled { get; set; } = true;
-    public int Port { get; set; } = 8888;
+    public int Port { get; set; } = 18888;
     public int ServerHttpPort { get; set; } = 21500;
-    public bool InstallRootCertificate { get; set; } = true;
-    public bool ManageSystemProxy { get; set; } = true;
-    public bool RestoreSystemProxyOnStop { get; set; } = true;
+    public bool InstallRootCertificate { get; set; } = false;
+    public bool ManageSystemProxy { get; set; } = false;
+    public bool RestoreSystemProxyOnStop { get; set; } = false;
     public string ProxyOverride { get; set; } = "localhost;127.*;10.*;192.168.*;<local>";
 }

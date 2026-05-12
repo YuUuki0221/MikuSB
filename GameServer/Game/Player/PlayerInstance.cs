@@ -226,7 +226,6 @@ public class PlayerInstance(PlayerGameData data)
                 continue;
             }
 
-            proto.Attrs[ToPackedAttrKey(gid, sid)] = val;
             proto.Attrs[ToShiftedAttrKey(gid, sid)] = val;
         }
 

@@ -107,16 +107,20 @@ public class RouteController : ControllerBase
             code = 0,
             data = new
             {
-                agreementUpdateTime = "1728552600000",
-                appDownLoadUrl = "",
-                enableReportDataToDouyin = false,
-                loginType = new[] { "channel" },
-                openActivationCode = false,
-                qqGroup = (string?)null,
-                privacyUpdateTime = "1728552600000",
-                realNameAuth = false
+                platformPrivacyAgreement = "https://www.amazingseasun.com/privacy.html?lang=zh-Hant&gamecode=200001086",
+                payType = new[] { "mycard" },
+                loginType = new[] { "mail", "google", "twitter", "guest", "steam" },
+                closeGeetest = false,
+                userAgreement = "https://www.amazingseasun.com/user.html?lang=zh-Hant&gamecode=111111680",
+                privacyAgreement = "https://www.amazingseasun.com/privacy.html?lang=zh-Hant&gamecode=111111680",
+                initPrivacyUpdateTime = 0,
+                platformUserAgreement = "https://www.amazingseasun.com/user.html?lang=zh-Hant&gamecode=200001086",
+                accountPublicKey = "",
+                payChannel = (string[]?)null,
+                registerPrivacyUrl = "https://xgsdk.xoyo.games:13443/seasun/privacy-agreement/200001086/register/privacy.html?language=zh-Hant",
+                loginPrivacyUrl = "https://xgsdk.xoyo.games:13443/seasun/privacy-agreement/111111680/login/privacy.html?language=zh-Hant"
             },
-            msg = "success"
+            msg = "操作成功"
         };
 
         return Ok(rsp);
@@ -133,31 +137,64 @@ public class RouteController : ControllerBase
     {
         string finalUid = uid ?? form_uid ?? "10001";
         string finalToken = token ?? form_token ?? Guid.NewGuid().ToString("N");
+        int parsedUid = int.TryParse(finalUid, out var numericUid) ? numericUid : 10001;
 
         object rsp = new
         {
             code = 0,
             data = new
             {
-                associatedAccounts = new[]
-            {
-                new { bindStatus = false, nickname = "", thirdPartyType = "mail" },
-                new { bindStatus = true, nickname = Config.GameServer.GameServerName, thirdPartyType = "google" },
-                new { bindStatus = false, nickname = "", thirdPartyType = "twitter" },
-                new { bindStatus = false, nickname = "", thirdPartyType = "guest" },
-                new { bindStatus = false, nickname = "", thirdPartyType = "steam" }
-            },
+                associatedAccounts = Array.Empty<string>(),
                 isFirstLogin = false,
                 isNeedKoreaSciAuth = false,
                 ksOpenId = $"ks_{finalUid}",
                 nickname = Config.GameServer.GameServerName,
-                passportId = finalUid.Length > 10 ? finalUid[^10..] : finalUid,
+                passportId = finalUid,
                 playerFillAgeUrl = "",
                 status = 0,
                 thirdPartyUid = "",
                 token = finalToken,
-                type = "google",
-                uid = finalUid
+                type = "guest",
+                uid = parsedUid
+            },
+            msg = "操作成功"
+        };
+
+        return Ok(rsp);
+    }
+
+    [HttpGet("/seasun/login")]
+    [HttpPost("/seasun/login")]
+    public IActionResult Login(
+        [FromQuery] string? uid,
+        [FromQuery] string? token,
+        [FromQuery] string? email,
+        [FromForm] string? form_uid,
+        [FromForm] string? form_token,
+        [FromForm] string? form_email
+    )
+    {
+        string finalUid = uid ?? form_uid ?? "10001";
+        string finalToken = token ?? form_token ?? Guid.NewGuid().ToString("N");
+        int parsedUid = int.TryParse(finalUid, out var numericUid) ? numericUid : 10001;
+
+        object rsp = new
+        {
+            code = 0,
+            data = new
+            {
+                associatedAccounts = Array.Empty<string>(),
+                isFirstLogin = false,
+                isNeedKoreaSciAuth = false,
+                ksOpenId = $"ks_{finalUid}",
+                nickname = Config.GameServer.GameServerName,
+                passportId = finalUid,
+                playerFillAgeUrl = "",
+                status = 0,
+                thirdPartyUid = "",
+                token = finalToken,
+                type = "guest",
+                uid = parsedUid
             },
             msg = "操作成功"
         };
@@ -173,7 +210,6 @@ public class RouteController : ControllerBase
     )
     {
         string uidString = uid ?? form_uid ?? "10001";
-        var finalUid = int.TryParse(uidString, out int parsedUid) ? parsedUid : 10001;
 
         object rsp = new
         {
@@ -184,8 +220,8 @@ public class RouteController : ControllerBase
                 channelUid = uidString,
                 loginAccountType = "google",
                 nickName = Config.GameServer.GameServerName,
-                passportId = uidString.Length > 10 ? uidString[^10..] : uidString,
-                uid = $"seasun__{uid}"
+                passportId = uidString,
+                uid = $"seasun__{uidString}"
             },
             msg = "操作成功"
         };
