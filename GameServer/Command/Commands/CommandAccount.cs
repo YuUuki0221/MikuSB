@@ -1,6 +1,8 @@
+using MikuSB.Database;
 using MikuSB.Database.Account;
 using MikuSB.Enums.Player;
 using MikuSB.Internationalization;
+using System.Text;
 
 namespace MikuSB.GameServer.Command.Commands;
 
@@ -33,5 +35,26 @@ public class CommandAccount : ICommands
         {
             await arg.SendMsg(I18NManager.Translate("Game.Command.Account.CreateFailed", ex.Message));
         }
+    }
+
+    [CommandMethod("list")]
+    public async ValueTask List(CommandArg arg)
+    {
+        var accounts = DatabaseHelper.GetAllInstance<AccountData>()?
+            .OrderBy(account => account.Uid)
+            .ToList();
+
+        if (accounts == null || accounts.Count == 0)
+        {
+            await arg.SendMsg("No accounts found.");
+            return;
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine("Accounts:");
+        foreach (var account in accounts)
+            builder.AppendLine($"{account.Username} -> UID {account.Uid}");
+
+        await arg.SendMsg(builder.ToString().TrimEnd());
     }
 }
