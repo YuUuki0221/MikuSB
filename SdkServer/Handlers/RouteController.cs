@@ -270,12 +270,17 @@ public class RouteController : ControllerBase
         var finalEmail = email ?? form_email ?? await GetJsonBodyValue("email");
         if (!string.IsNullOrWhiteSpace(finalEmail))
         {
-            var accountByEmail = AccountData.GetAccountByEmail(finalEmail);
-            if (accountByEmail == null)
-                return BuildLoginFailedResponse("Account not found.");
+            var username = finalEmail.Split('@')[0];
+            var accountData = AccountData.GetAccountByUserName(username);
+            if (accountData == null)
+            {
+                if (!ConfigManager.Config.ServerOption.AutoCreateUser) return BuildLoginFailedResponse("Account not found.");
+                AccountData.CreateAccount(username, 0, "123456");
+                accountData = AccountData.GetAccountByUserName(username)!;
+            }
 
-            var finalUidValue = accountByEmail.Uid.ToString();
-            var finalTokenValue = accountByEmail.GenerateComboToken();
+            var finalUidValue = accountData.Uid.ToString();
+            var finalTokenValue = accountData.GenerateComboToken();
 
             object emailLoginRsp = new
             {
@@ -286,14 +291,14 @@ public class RouteController : ControllerBase
                     isFirstLogin = false,
                     isNeedKoreaSciAuth = false,
                     ksOpenId = $"ks_{finalUidValue}",
-                    nickname = accountByEmail.Username,
+                    nickname = accountData.Username,
                     passportId = finalUidValue,
                     playerFillAgeUrl = "",
                     status = 0,
                     thirdPartyUid = "",
                     token = finalTokenValue,
                     type = "guest",
-                    uid = accountByEmail.Uid
+                    uid = accountData.Uid
                 },
                 msg = "操作成功"
             };
