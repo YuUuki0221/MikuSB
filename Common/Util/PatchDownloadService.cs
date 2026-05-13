@@ -6,8 +6,7 @@ public static class PatchDownloadService
 {
     private static readonly Logger Logger = new("PatchDownloader");
     private const string PatchRelativePath = @"Patch\MikuSB-Patch.dll";
-    private const string PatchDownloadUrl =
-        "https://github.com/Kei-Luna/MikuSB-Patch/releases/download/MikuSB-Patch/MikuSB-Patch.dll";
+    private const string PatchDownloadUrl = "https://github.com/Kei-Luna/MikuSB-Patch/releases/download/MikuSB-Patch/MikuSB-Patch.dll";
     private const int DownloadTimeoutSeconds = 60;
 
     public static void EnsurePatchPresent()
