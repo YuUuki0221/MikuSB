@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MikuSB.Configuration;
 using MikuSB.Database.Account;
@@ -12,8 +13,6 @@ namespace MikuSB.SdkServer.Handlers;
 public class RouteController : ControllerBase
 {
     public static ConfigContainer Config = ConfigManager.Config;
-
-    private const int DefaultAccountUid = 10001;
 
     public static object BuildServerList(string version = "")
     {
@@ -129,29 +128,15 @@ public class RouteController : ControllerBase
         return Ok(rsp);
     }
 
-    private static AccountData EnsureDefaultAccount()
-    {
-        var account = AccountData.GetAccountByUid(DefaultAccountUid)
-                      ?? AccountData.GetAccountByEmail("default@mikusb.local");
-        if (account != null)
-            return account;
-
-        return AccountData.CreateAccount("default@mikusb.local", DefaultAccountUid, "");
-    }
-
-    private static AccountData ResolveAccountByUid(string? uid)
+    private static AccountData? ResolveAccountByUid(string? uid)
     {
         if (int.TryParse(uid, out var parsedUid))
-        {
-            var accountByUid = AccountData.GetAccountByUid(parsedUid);
-            if (accountByUid != null)
-                return accountByUid;
-        }
+            return AccountData.GetAccountByUid(parsedUid);
 
-        return EnsureDefaultAccount();
+        return null;
     }
 
-    private static AccountData ResolveAccountForSdkLogin(string? email, string? uid, string? token)
+    private static AccountData? ResolveAccountForSdkLogin(string? email, string? uid, string? token)
     {
         if (!string.IsNullOrWhiteSpace(token))
         {
@@ -174,18 +159,78 @@ public class RouteController : ControllerBase
         return ResolveAccountByUid(uid);
     }
 
+    private async Task<string?> GetJsonBodyValue(string propertyName)
+    {
+        if (!Request.HasJsonContentType())
+            return null;
+
+        Request.EnableBuffering();
+        Request.Body.Position = 0;
+
+        using var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true);
+        var body = await reader.ReadToEndAsync();
+        Request.Body.Position = 0;
+
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+                return null;
+
+            return document.RootElement.TryGetProperty(propertyName, out var value)
+                ? value.GetString()
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private IActionResult BuildLoginFailedResponse(string message)
+    {
+        object rsp = new
+        {
+            code = 1001,
+            data = (object?)null,
+            msg = message
+        };
+
+        return Ok(rsp);
+    }
+
+    private IActionResult BuildNotFoundResponse(string message)
+    {
+        object rsp = new
+        {
+            code = 1001,
+            data = (object?)null,
+            msg = message
+        };
+
+        return Ok(rsp);
+    }
+
     [HttpGet("/seasun/loginByToken")]
     [HttpPost("/seasun/loginByToken")]
-    public IActionResult LoginByToken(
+    public async Task<IActionResult> LoginByToken(
         [FromQuery] string? uid,
         [FromQuery] string? token,
         [FromForm] string? form_uid,
         [FromForm] string? form_token
     )
     {
-        var account = ResolveAccountForSdkLogin(null, uid ?? form_uid, token ?? form_token);
-        var finalUid = account.Uid.ToString();
-        var finalToken = account.GenerateComboToken();
+        var finalUid = uid ?? form_uid ?? await GetJsonBodyValue("uid");
+        var finalToken = token ?? form_token ?? await GetJsonBodyValue("token");
+        var account = ResolveAccountForSdkLogin(null, finalUid, finalToken);
+        if (account == null)
+            return BuildLoginFailedResponse("Account not found.");
+
+        var responseUid = account.Uid.ToString();
+        var responseToken = account.GenerateComboToken();
 
         object rsp = new
         {
@@ -195,13 +240,13 @@ public class RouteController : ControllerBase
                 associatedAccounts = Array.Empty<string>(),
                 isFirstLogin = false,
                 isNeedKoreaSciAuth = false,
-                ksOpenId = $"ks_{finalUid}",
+                ksOpenId = $"ks_{responseUid}",
                 nickname = account.Username,
-                passportId = finalUid,
+                passportId = responseUid,
                 playerFillAgeUrl = "",
                 status = 0,
                 thirdPartyUid = "",
-                token = finalToken,
+                token = responseToken,
                 type = "guest",
                 uid = account.Uid
             },
@@ -213,7 +258,7 @@ public class RouteController : ControllerBase
 
     [HttpGet("/seasun/login")]
     [HttpPost("/seasun/login")]
-    public IActionResult Login(
+    public async Task<IActionResult> Login(
         [FromQuery] string? uid,
         [FromQuery] string? token,
         [FromQuery] string? email,
@@ -222,10 +267,48 @@ public class RouteController : ControllerBase
         [FromForm] string? form_email
     )
     {
-        var finalEmail = email ?? form_email;
-        var account = ResolveAccountForSdkLogin(finalEmail, uid ?? form_uid, token ?? form_token);
-        var finalUid = account.Uid.ToString();
-        var finalToken = account.GenerateComboToken();
+        var finalEmail = email ?? form_email ?? await GetJsonBodyValue("email");
+        if (!string.IsNullOrWhiteSpace(finalEmail))
+        {
+            var accountByEmail = AccountData.GetAccountByEmail(finalEmail);
+            if (accountByEmail == null)
+                return BuildLoginFailedResponse("Account not found.");
+
+            var finalUidValue = accountByEmail.Uid.ToString();
+            var finalTokenValue = accountByEmail.GenerateComboToken();
+
+            object emailLoginRsp = new
+            {
+                code = 0,
+                data = new
+                {
+                    associatedAccounts = Array.Empty<string>(),
+                    isFirstLogin = false,
+                    isNeedKoreaSciAuth = false,
+                    ksOpenId = $"ks_{finalUidValue}",
+                    nickname = accountByEmail.Username,
+                    passportId = finalUidValue,
+                    playerFillAgeUrl = "",
+                    status = 0,
+                    thirdPartyUid = "",
+                    token = finalTokenValue,
+                    type = "guest",
+                    uid = accountByEmail.Uid
+                },
+                msg = "操作成功"
+            };
+
+            return Ok(emailLoginRsp);
+        }
+
+        var finalUid = uid ?? form_uid ?? await GetJsonBodyValue("uid");
+        var finalToken = token ?? form_token ?? await GetJsonBodyValue("token");
+        var account = ResolveAccountForSdkLogin(finalEmail, finalUid, finalToken);
+        if (account == null)
+            return BuildLoginFailedResponse("Account not found.");
+
+        var responseUid = account.Uid.ToString();
+        var responseToken = account.GenerateComboToken();
 
         object rsp = new
         {
@@ -235,13 +318,13 @@ public class RouteController : ControllerBase
                 associatedAccounts = Array.Empty<string>(),
                 isFirstLogin = false,
                 isNeedKoreaSciAuth = false,
-                ksOpenId = $"ks_{finalUid}",
+                ksOpenId = $"ks_{responseUid}",
                 nickname = account.Username,
-                passportId = finalUid,
+                passportId = responseUid,
                 playerFillAgeUrl = "",
                 status = 0,
                 thirdPartyUid = "",
-                token = finalToken,
+                token = responseToken,
                 type = "guest",
                 uid = account.Uid
             },
@@ -259,6 +342,9 @@ public class RouteController : ControllerBase
     )
     {
         var account = ResolveAccountByUid(uid ?? form_uid);
+        if (account == null)
+            return BuildNotFoundResponse("Account not found.");
+
         var uidString = account.Uid.ToString();
 
         object rsp = new
@@ -338,7 +424,11 @@ public class RouteController : ControllerBase
     [HttpGet("/account/query-uid/{appId}")]
     public IActionResult QueryUid(string appId, [FromQuery] string authInfo)
     {
-        var uid = ResolveAccountByUid(ExtractUid(authInfo)).Uid.ToString();
+        var account = ResolveAccountByUid(ExtractUid(authInfo));
+        if (account == null)
+            return BuildNotFoundResponse("Account not found.");
+
+        var uid = account.Uid.ToString();
 
         object rsp = new
         {

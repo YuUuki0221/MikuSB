@@ -11,6 +11,8 @@ using MikuSB.GameServer.Server.Packet.Send.Misc;
 using MikuSB.Proto;
 using MikuSB.TcpSharp;
 using MikuSB.Util;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace MikuSB.GameServer.Server.Packet.Recv.Login;
@@ -18,21 +20,45 @@ namespace MikuSB.GameServer.Server.Packet.Recv.Login;
 [Opcode(CmdIds.ReqLogin)]
 public class HandlerReqLogin : Handler
 {
+    private static readonly Logger Logger = new("ReqLogin");
+
+    private static string? ExtractSdkAuthToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        try
+        {
+            var normalized = Uri.UnescapeDataString(token).Trim();
+            var padding = normalized.Length % 4;
+            if (padding > 0)
+                normalized = normalized.PadRight(normalized.Length + (4 - padding), '=');
+
+            var json = Encoding.UTF8.GetString(Convert.FromBase64String(normalized));
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.TryGetProperty("authToken", out var authToken)
+                ? authToken.GetString()
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public override async Task OnHandle(Connection connection, byte[] data, ushort seqNo)
     {
         var req = ReqLogin.Parser.ParseFrom(data);
+        var sdkAuthToken = ExtractSdkAuthToken(req.Token);
         var account = AccountData.GetAccountByComboToken(req.Token)
                       ?? AccountData.GetAccountByDispatchToken(req.Token)
-                      ?? AccountData.GetAccountByUid(10001)
-                      ?? AccountData.GetAccountByUid(1);
+                      ?? AccountData.GetAccountByComboToken(sdkAuthToken ?? "")
+                      ?? AccountData.GetAccountByDispatchToken(sdkAuthToken ?? "");
         if (account == null)
         {
-            account = AccountData.CreateAccount("default@mikusb.local", 10001, "");
-            if (account == null)
-            {
-                await connection.SendPacket(CmdIds.NtfLogout);
-                return;
-            }
+            Logger.Warn($"Rejected login: provider={req.Provider}, token={req.Token}, authToken={sdkAuthToken}");
+            await connection.SendPacket(CmdIds.NtfLogout);
+            return;
         }
         if (!ResourceManager.IsLoaded)
             // resource manager not loaded, return
