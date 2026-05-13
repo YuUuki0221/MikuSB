@@ -327,18 +327,30 @@ public class PlayerInstance(PlayerGameData data)
 
     private static IEnumerable<(uint Gid, uint Sid, uint Value)> BuildGirlFurnitureAttrs()
     {
-        // Unlock some furniture slots for every girl
-        // Each furniture attr int stores 10 slots using 3 bits per slot
-        // Value below means slot 0..9 = 1
         const uint furnitureUnlockedValue = 153391689;
+        var groupFurnitureByArea = new Dictionary<uint, uint>();
+        foreach (var pos in GameData.HouseFurniturePosData.Values)
+        {
+            var areaId = pos.AreaId;
+            var groupId = pos.GroupId;
+            uint selectedIndex = 1;
+            var shift = (groupId - 1) * 3;
+            if (!groupFurnitureByArea.TryGetValue(areaId, out var packed)) packed = 0;
+            packed |= (selectedIndex << (int)shift);
+            groupFurnitureByArea[areaId] = packed;
+        }
 
         for (uint girlId = 0; girlId <= 50; girlId++)
         {
-            // FurnitureStart..FurnitureEnd = 10..19
+            var baseSid = girlId * 50;
             for (uint offset = 10; offset <= 19; offset++)
             {
-                uint sid = (girlId * 50) + offset;
-                yield return (101, sid, furnitureUnlockedValue);
+                yield return (101, baseSid + offset, furnitureUnlockedValue);
+            }
+
+            if (groupFurnitureByArea.TryGetValue(girlId, out var groupValue))
+            {
+                yield return (101, baseSid + 20, groupValue);
             }
         }
     }
