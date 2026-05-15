@@ -19,6 +19,11 @@ public static class ConfigManager
         //LoadHotfixData();
     }
 
+    public static void SaveConfig()
+    {
+        SaveData(Config, ConfigFilePath);
+    }
+
     private static void LoadConfigData()
     {
         var file = new FileInfo(ConfigFilePath);
@@ -43,7 +48,24 @@ public static class ConfigManager
             Config = JsonConvert.DeserializeObject<ConfigContainer>(json)!;
         }
 
+        Config.Loader.Arguments = NormalizeLoaderArguments(Config.Loader.Arguments);
         SaveData(Config, ConfigFilePath);
+    }
+
+    private static string[] NormalizeLoaderArguments(string[]? arguments)
+    {
+        var result = new List<string>(arguments ?? []);
+        var userDataDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Client_User_Data"));
+        Directory.CreateDirectory(userDataDirectory);
+
+        var userDirArgument = $"-userdir={userDataDirectory}";
+        var existingIndex = result.FindIndex(x => x.StartsWith("-userdir=", StringComparison.OrdinalIgnoreCase));
+        if (existingIndex >= 0)
+            result[existingIndex] = userDirArgument;
+        else
+            result.Add(userDirArgument);
+
+        return result.ToArray();
     }
 
     private static void LoadHotfixData()

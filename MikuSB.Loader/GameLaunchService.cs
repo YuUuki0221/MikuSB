@@ -293,11 +293,14 @@ public sealed class LaunchOptions
     public static LaunchOptions FromConfig(IEnumerable<string>? extraGameArguments = null)
     {
         var config = ConfigManager.Config;
+        var serverBaseDirectory = AppContext.BaseDirectory;
         var gamePath = ResolvePath(config.Loader.GamePath, AppContext.BaseDirectory);
-        var patchPaths = ResolvePatchPaths(config.Loader.PatchPaths, AppContext.BaseDirectory);
+        var patchPaths = ResolvePatchPaths(config.Loader.PatchPaths, serverBaseDirectory);
         var gameArgs = new List<string>(config.Loader.Arguments ?? []);
         if (extraGameArguments is not null)
             gameArgs.AddRange(extraGameArguments.Where(x => !string.IsNullOrWhiteSpace(x)));
+        gameArgs = EnsureUserDirArgument(gameArgs, serverBaseDirectory);
+        PersistResolvedArgumentsIfChanged(config, gameArgs);
 
         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (config.Loader.SetAllProxy && config.Proxy.Enabled)
@@ -328,6 +331,31 @@ public sealed class LaunchOptions
             GameArguments = gameArgs,
             EnvironmentVariables = env
         };
+    }
+
+    private static List<string> EnsureUserDirArgument(List<string> gameArgs, string baseDirectory)
+    {
+        var userDataDirectory = Path.GetFullPath(Path.Combine(baseDirectory, "Client_User_Data"));
+        Directory.CreateDirectory(userDataDirectory);
+
+        var userDirArgument = $"-userdir={userDataDirectory}";
+        var existingIndex = gameArgs.FindIndex(x => x.StartsWith("-userdir=", StringComparison.OrdinalIgnoreCase));
+        if (existingIndex >= 0)
+            gameArgs[existingIndex] = userDirArgument;
+        else
+            gameArgs.Add(userDirArgument);
+
+        return gameArgs;
+    }
+
+    private static void PersistResolvedArgumentsIfChanged(Configuration.ConfigContainer config, List<string> gameArgs)
+    {
+        var currentArgs = config.Loader.Arguments ?? [];
+        if (currentArgs.SequenceEqual(gameArgs, StringComparer.Ordinal))
+            return;
+
+        config.Loader.Arguments = gameArgs.ToArray();
+        ConfigManager.SaveConfig();
     }
 
     private static string? ResolvePath(string? value, string baseDirectory)
