@@ -2,6 +2,7 @@ using MikuSB.Database;
 using MikuSB.Database.Account;
 using MikuSB.Enums.Player;
 using MikuSB.Internationalization;
+using MikuSB.GameServer.Server;
 using System.Text;
 
 namespace MikuSB.GameServer.Command.Commands;
@@ -34,6 +35,42 @@ public class CommandAccount : ICommands
         catch (ArgumentException ex)
         {
             await arg.SendMsg(I18NManager.Translate("Game.Command.Account.CreateFailed", ex.Message));
+        }
+    }
+
+    [CommandMethod("delete")]
+    public async ValueTask Delete(CommandArg arg)
+    {
+        if (!await arg.CheckArgCnt(1))
+            return;
+
+        var identifier = arg.Args[0].Trim();
+        var account = int.TryParse(identifier, out var uid) && uid > 0
+            ? AccountData.GetAccountByUid(uid)
+            : AccountData.GetAccountByUserName(identifier);
+
+        if (account == null)
+        {
+            await arg.SendMsg(I18NManager.Translate("Game.Command.Account.NotFound", identifier));
+            return;
+        }
+
+        try
+        {
+            if (Listener.GetActiveConnection(account.Uid) != null)
+            {
+                await arg.SendMsg(I18NManager.Translate("Game.Command.Account.DeleteOnline", account.Username,
+                    account.Uid.ToString()));
+                return;
+            }
+
+            AccountData.DeleteAccount(account.Uid);
+            await arg.SendMsg(I18NManager.Translate("Game.Command.Account.Deleted", account.Username,
+                account.Uid.ToString()));
+        }
+        catch (Exception ex)
+        {
+            await arg.SendMsg(I18NManager.Translate("Game.Command.Account.DeleteFailed", ex.Message));
         }
     }
 

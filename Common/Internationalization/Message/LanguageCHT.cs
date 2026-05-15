@@ -222,9 +222,16 @@ public class HelpTextCHT
 public class AccountTextCHT
 {
     public string Desc => "管理 SDK 登入使用的帳號映射";
-    public string Usage => "用法: /account create <郵箱> <UID>";
+    public string Usage =>
+        "用法: /account create <郵箱> <UID>\n" +
+        "用法: /account delete <郵箱|UID>\n" +
+        "用法: /account list";
     public string Created => "已建立帳號映射: {0} -> UID {1}";
     public string CreateFailed => "建立帳號映射失敗: {0}";
+    public string Deleted => "已刪除帳號映射: {0} -> UID {1}";
+    public string DeleteFailed => "刪除帳號映射失敗: {0}";
+    public string DeleteOnline => "帳號在線時無法刪除: {0} -> UID {1}";
+    public string NotFound => "未找到帳號: {0}";
 }
 
 /// <summary>

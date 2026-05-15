@@ -188,9 +188,16 @@ public class HelpTextEN
 public class AccountTextEN
 {
     public string Desc => "Manage account mappings for SDK logins";
-    public string Usage => "Usage: /account create <email> <uid>";
+    public string Usage =>
+        "Usage: /account create <email> <uid>\n" +
+        "Usage: /account delete <email|uid>\n" +
+        "Usage: /account list";
     public string Created => "Created account mapping: {0} -> UID {1}";
     public string CreateFailed => "Failed to create account mapping: {0}";
+    public string Deleted => "Deleted account mapping: {0} -> UID {1}";
+    public string DeleteFailed => "Failed to delete account mapping: {0}";
+    public string DeleteOnline => "Cannot delete account while online: {0} -> UID {1}";
+    public string NotFound => "Account not found: {0}";
 }
 
 /// <summary>

@@ -222,9 +222,16 @@ public class HelpTextCHS
 public class AccountTextCHS
 {
     public string Desc => "管理 SDK 登录使用的账号映射";
-    public string Usage => "用法: /account create <邮箱> <UID>";
+    public string Usage =>
+        "用法: /account create <邮箱> <UID>\n" +
+        "用法: /account delete <邮箱|UID>\n" +
+        "用法: /account list";
     public string Created => "已创建账号映射: {0} -> UID {1}";
     public string CreateFailed => "创建账号映射失败: {0}";
+    public string Deleted => "已删除账号映射: {0} -> UID {1}";
+    public string DeleteFailed => "删除账号映射失败: {0}";
+    public string DeleteOnline => "账号在线时无法删除: {0} -> UID {1}";
+    public string NotFound => "未找到账号: {0}";
 }
 
 /// <summary>
