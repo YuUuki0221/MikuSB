@@ -270,13 +270,13 @@ public class RouteController : ControllerBase
         var finalEmail = email ?? form_email ?? await GetJsonBodyValue("email");
         if (!string.IsNullOrWhiteSpace(finalEmail))
         {
-            var username = finalEmail.Split('@')[0];
-            var accountData = AccountData.GetAccountByUserName(username);
+            var normalizedEmail = finalEmail.Trim();
+            var accountData = AccountData.GetAccountByEmail(normalizedEmail);
             if (accountData == null)
             {
                 if (!ConfigManager.Config.ServerOption.AutoCreateUser) return BuildLoginFailedResponse("Account not found.");
-                AccountData.CreateAccount(username, 0, "123456");
-                accountData = AccountData.GetAccountByUserName(username)!;
+                AccountData.CreateAccount(normalizedEmail, 0, "123456");
+                accountData = AccountData.GetAccountByEmail(normalizedEmail)!;
             }
 
             var finalUidValue = accountData.Uid.ToString();
